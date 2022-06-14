@@ -31,7 +31,7 @@ export default function Home() {
 		<main>
 			<h1>Next.js - Twilio Conversations</h1>
 			{!token && <LogIn identity={identity} setIdentity={setIdentity} getToken={getToken} loading={loading} />}
-			{token && <MessageList token={token} conversationSid={conversationSid} />}
+			{token && <MessageList token={token} conversationSid={conversationSid} identity={identity} />}
 		</main>
 	);
 }

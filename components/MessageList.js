@@ -16,7 +16,9 @@ export default function MessageList({ token, identity, conversationSid }) {
 
 					const conversation = await client.getConversationBySid(conversationSid);
 
-					console.log(conversation);
+					const message = await conversation.sendMessage(`${identity} joined`);
+
+					console.log({ conversation, message });
 				}
 			});
 		}
