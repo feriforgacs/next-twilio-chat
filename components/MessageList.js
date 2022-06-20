@@ -1,38 +1,28 @@
 import { useState, useEffect } from "react";
-import { Client } from "@twilio/conversations";
+import useClient from "../hooks/useClient";
 
 export default function MessageList({ token, identity, conversationSid }) {
-	const [client, setClient] = useState();
 	const [message, setMessage] = useState("");
 	const [loading, setLoading] = useState(false);
-	const [conversation, setConversation] = useState();
 	const [messages, setMessages] = useState([]);
+	const [client, conversation] = useClient({ token, identity, conversationSid });
 
 	useEffect(() => {
-		if (token) {
-			const client = new Client(token);
+		const getMessages = async () => {
+			const messages = await conversation.getMessages();
+			setMessages(messages.items);
+		};
 
-			client.on("stateChanged", async (state) => {
-				if (state === "initialized") {
-					setClient(client);
-
-					const conversation = await client.getConversationBySid(conversationSid);
-					setConversation(conversation);
-
-					conversation.on("messageAdded", (message) => {
-						setMessages((existingMessages) => [message, ...existingMessages]);
-					});
-
-					// get existing messages in the conversation
-					const messages = await conversation.getMessages();
-					setMessages(messages.items);
-
-					// send default message on join
-					await conversation.sendMessage(`${identity} joined`);
-				}
-			});
+		if (conversation) {
+			conversation.on("messageAdded", getMessages);
 		}
-	}, [token, identity, conversationSid]);
+
+		return () => {
+			if (conversation) {
+				conversation.removeListener("messageAdded", getMessages);
+			}
+		};
+	}, [conversation]);
 
 	const sendMessage = async (e) => {
 		setLoading(true);
