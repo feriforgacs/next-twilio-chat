@@ -1,10 +1,10 @@
 export default function LogIn({ identity, setIdentity, getToken, loading }) {
 	return (
-		<section>
+		<form onSubmit={(e) => getToken(e)}>
 			<input type="text" value={identity} onChange={(e) => setIdentity(e.target.value)} />
-			<button onClick={(e) => getToken(e)} disabled={loading || !identity}>
+			<button type="submit" disabled={loading || !identity}>
 				Log in
 			</button>
-		</section>
+		</form>
 	);
 }

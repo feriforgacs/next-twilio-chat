@@ -5,6 +5,8 @@ export default function MessageList({ token, identity, conversationSid }) {
 	const [client, setClient] = useState();
 	const [message, setMessage] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [conversation, setConversation] = useState();
+	const [messages, setMessages] = useState([]);
 
 	useEffect(() => {
 		if (token) {
@@ -15,10 +17,18 @@ export default function MessageList({ token, identity, conversationSid }) {
 					setClient(client);
 
 					const conversation = await client.getConversationBySid(conversationSid);
+					setConversation(conversation);
 
-					const message = await conversation.sendMessage(`${identity} joined`);
+					conversation.on("messageAdded", (message) => {
+						setMessages((existingMessages) => [message, ...existingMessages]);
+					});
 
-					console.log({ conversation, message });
+					// get existing messages in the conversation
+					const messages = await conversation.getMessages();
+					setMessages(messages.items);
+
+					// send default message on join
+					await conversation.sendMessage(`${identity} joined`);
 				}
 			});
 		}
@@ -27,6 +37,8 @@ export default function MessageList({ token, identity, conversationSid }) {
 	const sendMessage = async (e) => {
 		setLoading(true);
 		e.preventDefault();
+		await conversation.sendMessage(message);
+		setMessage("");
 		setLoading(false);
 	};
 
@@ -34,13 +46,15 @@ export default function MessageList({ token, identity, conversationSid }) {
 		<div>
 			<h1>Messages</h1>
 			<ul>
-				<li>Message 1</li>
-				<li>Message 2</li>
-				<li>Message 3</li>
+				{messages.map((message) => (
+					<li key={message.state.index}>
+						💬 <strong>{message.state.author}</strong>: {message.state.body}
+					</li>
+				))}
 			</ul>
-			{client && (
+			{client && conversation && (
 				<form onSubmit={(e) => sendMessage(e)}>
-					<input type={"text"} value={message} onChange={(e) => setMessage(e.target.value)} />
+					<input type={"text"} value={message} onChange={(e) => setMessage(e.target.value)} readOnly={loading} />
 					<button type="submit" disabled={loading}>
 						{loading ? "Sending" : "Send message"}
 					</button>
